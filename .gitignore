@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Cloudflare Workers
+service/node_modules/
+service/.wrangler/
+service/.dev.vars
+
+# Local cache
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Wrangler local config (account_id, custom bucket names, etc.)
+service/wrangler.local.toml
+wrangler.local.toml
+
+# Package tarballs
+*.tgz
+*.skill
+
+# Temp files
+/tmp/
+
+# Lock files (package-manager-agnostic)
+pnpm-lock.yaml
+package-lock.json

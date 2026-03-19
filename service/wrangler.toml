@@ -1,0 +1,30 @@
+name = "duoduo-widget"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+workers_dev = true
+
+# ─── Account configuration ────────────────────────────────────────
+# Set your Cloudflare Account ID via environment variable:
+#   export CLOUDFLARE_ACCOUNT_ID=your-account-id
+#
+# Or create service/.env with:
+#   CLOUDFLARE_ACCOUNT_ID=your-account-id
+#
+# Wrangler reads CLOUDFLARE_ACCOUNT_ID automatically.
+# ──────────────────────────────────────────────────────────────────
+
+[durable_objects]
+bindings = [
+  { name = "WIDGET_DO", class_name = "WidgetDurableObject" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["WidgetDurableObject"]
+
+[[r2_buckets]]
+binding = "WIDGET_R2"
+bucket_name = "duoduo-widgets"
+
+[vars]
+# TOKEN_SECRET must be set via: npx wrangler secret put TOKEN_SECRET

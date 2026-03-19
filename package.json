@@ -1,0 +1,31 @@
+{
+  "name": "@openduo/duoduo-widgets",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Interactive web widgets that give AI agents a visual voice",
+  "author": "OpenDuo <noreply@openduo.ai>",
+  "license": "MIT",
+  "homepage": "https://openduo.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aidgets/duoduo-widgets"
+  },
+  "bin": {
+    "duoduo-widget": "dist/duoduo-widget.js"
+  },
+  "scripts": {
+    "build": "node scripts/build-cli.mjs",
+    "typecheck": "tsc --noEmit",
+    "deploy": "cd service && npx wrangler deploy",
+    "dev": "cd service && npx wrangler dev"
+  },
+  "dependencies": {
+    "undici": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0"
+  }
+}
