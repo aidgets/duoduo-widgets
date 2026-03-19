@@ -31,14 +31,27 @@ npm install -g @openduo/duoduo-widgets
 # 1. Create draft — returns widget_id, viewer_url, control_url, control_token
 duoduo-widget open --title "Dashboard" --ttl-seconds 300
 
-# 2. Push HTML (progressive — user sees real-time SSE updates)
-echo '<h1>Results</h1>...' | duoduo-widget update --wid "wid_..."
+# 2. Send feishu_sidebar link to user immediately — wait for user to confirm it's open
+#    (user must open the sidebar BEFORE content is useful to them)
 
-# 3. Freeze to immutable revision
+# 3. Push HTML in small increments — one logical block per update call
+#    Each update replaces the full page, so always include previously pushed sections
+echo '<h1>Title only</h1>' | duoduo-widget update --wid "wid_..."
+echo '<h1>Title</h1><div>Section 1...</div>' | duoduo-widget update --wid "wid_..."
+echo '<h1>Title</h1><div>Section 1</div><div>Section 2...</div>' | duoduo-widget update --wid "wid_..."
+
+# 4. Freeze to immutable revision
 duoduo-widget finalize --wid "wid_..."
 ```
 
 **Send `viewer_url` to user. NEVER send `control_url` or `control_token`.**
+
+**Progressive rendering protocol (important):**
+
+1. `open` → immediately send `links.feishu_sidebar` to user → wait for user to say they've opened it
+2. Push content in small logical blocks (header, then one section at a time)
+3. Each `update` call should add one meaningful chunk — not the entire page at once
+4. Reason: the user is watching the widget update live in a sidebar; small chunks make the experience feel responsive and avoid timeouts from large HTML payloads
 
 Use `--wid` (local cache) instead of long URLs. For large HTML, write to a temp file first then pipe: `cat /tmp/widget.html | duoduo-widget update --wid "wid_..."`.
 
