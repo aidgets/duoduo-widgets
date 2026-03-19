@@ -39,6 +39,6 @@ wrangler.local.toml
 # Temp files
 /tmp/
 
-# Lock files (package-manager-agnostic)
+# Other package manager lock files
 pnpm-lock.yaml
-package-lock.json
+yarn.lock
