@@ -46,7 +46,7 @@ Wait options:
   --timeout-seconds <n>         Timeout in seconds (default: 600)
 
 Environment:
-  WIDGET_SERVICE_URL            Base URL of the widget service (required)
+  WIDGET_SERVICE_URL            Base URL of the widget service (default: https://aidgets.dev)
 `;
 
 function main(): void {
@@ -75,11 +75,7 @@ function main(): void {
   }
 
   const command = positionals[0];
-  const baseUrl = process.env.WIDGET_SERVICE_URL;
-  if (!baseUrl) {
-    console.error("Error: WIDGET_SERVICE_URL environment variable is required");
-    process.exit(1);
-  }
+  const baseUrl = process.env.WIDGET_SERVICE_URL || "https://aidgets.dev";
 
   const client = new WidgetClient(baseUrl);
 
