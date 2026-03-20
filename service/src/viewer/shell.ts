@@ -187,18 +187,22 @@ function renderSSEScript(): string {
       }
 
       function execScripts(html) {
+        // Remove previously injected scripts to avoid duplicate execution
+        document.querySelectorAll('script[data-widget-injected]').forEach(function(s) {
+          s.remove();
+        });
         var tmp = document.createElement('div');
         tmp.innerHTML = html;
         var scripts = tmp.querySelectorAll('script');
         scripts.forEach(function(s) {
           var ns = document.createElement('script');
+          ns.setAttribute('data-widget-injected', '1');
           if (s.src) {
             ns.src = s.src;
           } else {
             ns.textContent = s.textContent;
           }
           document.body.appendChild(ns);
-          if (!s.src) ns.remove();
         });
       }
 
@@ -217,6 +221,7 @@ function renderSSEScript(): string {
               var tmp = document.createElement('div');
               tmp.innerHTML = data.html;
               morphdom(root, tmp, { childrenOnly: false });
+              execScripts(data.html);
             }
           } catch (err) {
             console.error('update parse error', err);

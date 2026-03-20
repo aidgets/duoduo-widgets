@@ -55,7 +55,7 @@ describe("renderShell", () => {
     });
   });
 
-  describe("script execution on finalize (PR #1)", () => {
+  describe("script execution on SSE events", () => {
     const html = renderShell({ widgetId: WIDGET_ID, state: "draft" });
 
     // Extract event handler blocks between consecutive addEventListener calls
@@ -66,16 +66,17 @@ describe("renderShell", () => {
       return match![0];
     }
 
-    it("does NOT call execScripts during update events", () => {
-      expect(extractHandler("update")).not.toContain("execScripts");
+    it("calls execScripts during update events", () => {
+      expect(extractHandler("update")).toContain("execScripts");
     });
 
     it("calls execScripts during finalize events", () => {
       expect(extractHandler("finalize")).toContain("execScripts");
     });
 
-    it("defines execScripts function that re-creates script elements", () => {
+    it("defines execScripts that cleans up previous injected scripts", () => {
       expect(html).toContain("function execScripts");
+      expect(html).toContain("data-widget-injected");
       expect(html).toContain("document.createElement('script')");
       expect(html).toContain("document.body.appendChild");
     });
