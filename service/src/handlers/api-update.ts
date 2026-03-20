@@ -3,7 +3,7 @@
  */
 
 import type { Env } from "../index.js";
-import type { UpdateRequest, UpdateResponse } from "@widget-types/api";
+import type { UpdateRequest } from "@widget-types/api";
 import { validateToken } from "../auth/token.js";
 
 export async function handleApiUpdate(request: Request, env: Env): Promise<Response> {
