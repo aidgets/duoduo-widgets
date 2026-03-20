@@ -5,11 +5,7 @@
  * R2 writes are delegated to the Worker handler (DOs don't have direct R2 bindings).
  */
 
-import type {
-  WidgetManifest,
-  WidgetState,
-  InteractionConfig,
-} from "@widget-types/manifest";
+import type { WidgetManifest, InteractionConfig } from "@widget-types/manifest";
 import type { InteractionEvent } from "@widget-types/interaction";
 import { generateToken } from "../auth/token.js";
 
@@ -366,7 +362,9 @@ export class WidgetDurableObject implements DurableObject {
 
     // Timed out — re-check state
     const refreshed = await this.getManifest();
-    const finalState = refreshed ? (await this.checkAndTransitionExpiry(refreshed)).state : "unknown";
+    const finalState = refreshed
+      ? (await this.checkAndTransitionExpiry(refreshed)).state
+      : "unknown";
 
     return jsonResponse({
       submitted: false,
