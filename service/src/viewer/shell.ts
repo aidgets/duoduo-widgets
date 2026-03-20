@@ -200,7 +200,9 @@ function renderSSEScript(): string {
           if (s.src) {
             ns.src = s.src;
           } else {
-            ns.textContent = s.textContent;
+            // Wrap in IIFE to isolate scope — prevents "already declared"
+            // errors when the same script re-executes on subsequent updates
+            ns.textContent = '(function(){' + s.textContent + '})();';
           }
           document.body.appendChild(ns);
         });
