@@ -186,6 +186,22 @@ function renderSSEScript(): string {
         statusEl.className = 'widget-status ' + cls;
       }
 
+      function execScripts(html) {
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        var scripts = tmp.querySelectorAll('script');
+        scripts.forEach(function(s) {
+          var ns = document.createElement('script');
+          if (s.src) {
+            ns.src = s.src;
+          } else {
+            ns.textContent = s.textContent;
+          }
+          document.body.appendChild(ns);
+          if (!s.src) ns.remove();
+        });
+      }
+
       function connect() {
         setStatus('connecting...', '');
         var es = new EventSource('/w/' + widgetId + '/stream');
@@ -214,6 +230,7 @@ function renderSSEScript(): string {
               var tmp = document.createElement('div');
               tmp.innerHTML = data.html;
               morphdom(root, tmp, { childrenOnly: false });
+              execScripts(data.html);
             }
           } catch (err) {
             console.error('finalize parse error', err);
