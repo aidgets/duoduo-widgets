@@ -54,4 +54,27 @@ describe("renderShell", () => {
       expect(html).not.toContain("EventSource");
     });
   });
+
+  describe("script execution on finalize (PR #1)", () => {
+    const html = renderShell({ widgetId: WIDGET_ID, state: "draft" });
+
+    it("does NOT call execScripts during update events", () => {
+      const updateMatch = html.match(/addEventListener\('update'[\s\S]*?}\s*\)\s*;/);
+      expect(updateMatch).not.toBeNull();
+      expect(updateMatch![0]).not.toContain("execScripts");
+    });
+
+    it("should call execScripts during finalize events (pending PR #1)", () => {
+      // Documents the current bug: finalize handler does NOT call execScripts,
+      // so agent-generated <script> tags are silently ignored after morphdom
+      // patches the DOM.
+      //
+      // PR #1 fixes this by adding execScripts(data.html) in the finalize handler.
+      // After merging PR #1, this assertion should flip to toContain("execScripts").
+      const finalizeMatch = html.match(/addEventListener\('finalize'[\s\S]*?}\s*\)\s*;/);
+      expect(finalizeMatch).not.toBeNull();
+      // BUG: execScripts is missing from finalize handler (fixed by PR #1)
+      expect(finalizeMatch![0]).not.toContain("execScripts");
+    });
+  });
 });
