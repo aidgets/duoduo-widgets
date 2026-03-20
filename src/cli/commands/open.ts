@@ -9,7 +9,6 @@ export interface OpenArgs {
   fork?: string;
   "interaction-mode"?: string;
   "interaction-prompt"?: string;
-  "interaction-ttl"?: string;
 }
 
 export async function openCommand(client: WidgetClient, args: OpenArgs): Promise<void> {
@@ -22,9 +21,6 @@ export async function openCommand(client: WidgetClient, args: OpenArgs): Promise
       ? {
           mode: args["interaction-mode"] as "submit",
           prompt: args["interaction-prompt"] ?? "",
-          ttl_seconds: args["interaction-ttl"]
-            ? parseInt(args["interaction-ttl"], 10)
-            : undefined,
         }
       : undefined,
   };

@@ -115,12 +115,6 @@ export class WidgetDurableObject implements DurableObject {
         manifest.state = "draft_expired";
         await this.setManifest(manifest);
       }
-    } else if (manifest.state === "awaiting_input" && manifest.interaction?.expires_at) {
-      const expiresAt = new Date(manifest.interaction.expires_at).getTime();
-      if (now > expiresAt) {
-        manifest.state = "interaction_expired";
-        await this.setManifest(manifest);
-      }
     }
 
     return manifest;
@@ -228,9 +222,6 @@ export class WidgetDurableObject implements DurableObject {
     // Transition state
     if (checked.interaction?.mode === "submit") {
       checked.state = "awaiting_input";
-      checked.interaction.expires_at = new Date(
-        Date.now() + (checked.interaction.ttl_seconds || 120) * 1000,
-      ).toISOString();
     } else {
       checked.state = "finalized";
     }

@@ -2,7 +2,11 @@ import { parseArgs } from "node:util";
 
 // Enable HTTP(S) proxy support for Node.js fetch
 import { ProxyAgent, setGlobalDispatcher } from "undici";
-const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy;
+const proxyUrl =
+  process.env.HTTPS_PROXY ||
+  process.env.https_proxy ||
+  process.env.HTTP_PROXY ||
+  process.env.http_proxy;
 if (proxyUrl) {
   setGlobalDispatcher(new ProxyAgent(proxyUrl));
 }
@@ -35,7 +39,6 @@ Open options:
   --fork <widget_id>            Fork from existing widget
   --interaction-mode <mode>     "submit"
   --interaction-prompt <text>   Prompt shown to user
-  --interaction-ttl <n>         Interaction TTL in seconds
 
 Update options:
   --html <html>                 HTML content (or pipe via stdin)
@@ -62,7 +65,6 @@ function main(): void {
       mode: { type: "string" },
       "interaction-mode": { type: "string" },
       "interaction-prompt": { type: "string" },
-      "interaction-ttl": { type: "string" },
       fork: { type: "string" },
       "widget-id": { type: "string" },
       help: { type: "boolean", short: "h" },
