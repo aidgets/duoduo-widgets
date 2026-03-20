@@ -17,7 +17,6 @@ export interface OpenRequest {
     mode: "submit";
     prompt: string;
     schema?: Record<string, unknown> | null;
-    ttl_seconds?: number; // default 120
   } | null;
 }
 

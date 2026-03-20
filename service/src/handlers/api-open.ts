@@ -28,8 +28,6 @@ export async function handleApiOpen(request: Request, env: Env): Promise<Respons
         mode: body.interaction.mode,
         prompt: body.interaction.prompt,
         schema: body.interaction.schema ?? null,
-        ttl_seconds: body.interaction.ttl_seconds ?? 120,
-        expires_at: null, // set on finalize
       }
     : null;
 

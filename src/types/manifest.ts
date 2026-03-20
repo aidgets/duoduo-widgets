@@ -2,13 +2,7 @@
  * Widget manifest — the core state record for a widget instance.
  */
 
-export type WidgetState =
-  | "draft"
-  | "draft_expired"
-  | "finalized"
-  | "awaiting_input"
-  | "submitted"
-  | "interaction_expired";
+export type WidgetState = "draft" | "draft_expired" | "finalized" | "awaiting_input" | "submitted";
 
 export interface WidgetManifest {
   widget_id: string;
@@ -26,6 +20,4 @@ export interface InteractionConfig {
   mode: "submit";
   prompt: string;
   schema: Record<string, unknown> | null;
-  ttl_seconds: number;
-  expires_at: string | null; // set when state transitions to awaiting_input
 }
