@@ -489,7 +489,6 @@ V1 需要 live viewer，但不需要 duoduo 内部 preview consumer。
 - `awaiting_input`
 - `submitted`
 - `draft_expired`
-- `interaction_expired`
 
 ### 11.2 Revision Metadata
 
@@ -709,7 +708,6 @@ finalized
 
 awaiting_input
   -> submitted             (收到合法 widget_event)
-  -> interaction_expired   (交互窗口到期)
 
 submitted
   -> submitted             (稳定只读态)

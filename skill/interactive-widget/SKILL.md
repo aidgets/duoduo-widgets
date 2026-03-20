@@ -78,7 +78,7 @@ Collect structured user input:
 
 ```bash
 duoduo-widget open --title "Confirm" --ttl-seconds 300 \
-  --interaction-mode submit --interaction-prompt "Review and confirm" --interaction-ttl 120
+  --interaction-mode submit --interaction-prompt "Review and confirm"
 ```
 
 Include submit button in HTML:
@@ -98,14 +98,14 @@ Non-blocking alternative: `duoduo-widget get --wid "wid_..."`
 
 ## CLI commands
 
-| Command    | Purpose            | Key flags                                                                                     |
-| ---------- | ------------------ | --------------------------------------------------------------------------------------------- |
-| `open`     | Create draft       | `--title`, `--ttl-seconds`, `--interaction-mode`, `--interaction-prompt`, `--interaction-ttl` |
-| `update`   | Push HTML          | `--wid`, `--html` or stdin, `--text-fallback`, `--mode partial\|full`                         |
-| `finalize` | Freeze revision    | `--wid`                                                                                       |
-| `wait`     | Block for submit   | `--wid`, `--timeout-seconds`                                                                  |
-| `get`      | Poll submit status | `--wid`                                                                                       |
-| `inspect`  | Debug manifest     | `--wid`                                                                                       |
+| Command    | Purpose            | Key flags                                                                |
+| ---------- | ------------------ | ------------------------------------------------------------------------ |
+| `open`     | Create draft       | `--title`, `--ttl-seconds`, `--interaction-mode`, `--interaction-prompt` |
+| `update`   | Push HTML          | `--wid`, `--html` or stdin, `--text-fallback`, `--mode partial\|full`    |
+| `finalize` | Freeze revision    | `--wid`                                                                  |
+| `wait`     | Block for submit   | `--wid`, `--timeout-seconds`                                             |
+| `get`      | Poll submit status | `--wid`                                                                  |
+| `inspect`  | Debug manifest     | `--wid`                                                                  |
 
 ## HTML authoring
 
