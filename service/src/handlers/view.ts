@@ -47,7 +47,7 @@ export async function handleView(
     return new Response("Widget not found", { status: 404 });
   }
 
-  const doData = (await doRes.json()) as { state: string };
+  const doData = (await doRes.json()) as { state: string; title: string };
   let staticHtml: string | undefined;
 
   // For non-draft states, try to serve the last revision from R2
@@ -71,6 +71,7 @@ export async function handleView(
     widgetId,
     staticHtml,
     state: doData.state,
+    title: doData.title,
   });
 
   return new Response(shell, {

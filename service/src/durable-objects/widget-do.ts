@@ -390,6 +390,7 @@ export class WidgetDurableObject implements DurableObject {
       state: checked.state,
       submitted: checked.state === "submitted",
       event: lastEvent,
+      title: checked.title,
     });
   }
 

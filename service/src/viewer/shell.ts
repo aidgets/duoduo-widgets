@@ -17,10 +17,12 @@ export interface ShellOptions {
   staticHtml?: string;
   /** Current widget state */
   state?: string;
+  /** Widget title */
+  title?: string;
 }
 
 export function renderShell(opts: ShellOptions): string {
-  const { widgetId, staticHtml, state } = opts;
+  const { widgetId, staticHtml, state, title } = opts;
   const isLive = !staticHtml && state === "draft";
   const csp = buildCSP(widgetId);
 
@@ -30,7 +32,7 @@ export function renderShell(opts: ShellOptions): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="${escapeAttr(csp)}">
-  <title>Widget ${escapeHtml(widgetId)}</title>
+  <title>${escapeHtml(title || widgetId)}</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
 
