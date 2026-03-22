@@ -172,7 +172,17 @@ export function renderShell(opts: ShellOptions): string {
         }
       };
 
-      ${isLive ? renderSSEScript() : "// Static content — no SSE needed"}
+      ${
+        isLive
+          ? renderSSEScript()
+          : `// Static content — no SSE needed
+      // Ensure Chart.js instances render after layout is ready
+      window.addEventListener('load', function() {
+        if (typeof Chart !== 'undefined' && Chart.instances) {
+          Object.values(Chart.instances).forEach(function(c) { c.resize(); });
+        }
+      });`
+      }
     })();
   </script>
 </body>
@@ -193,19 +203,34 @@ function renderSSEScript(): string {
         });
         var tmp = document.createElement('div');
         tmp.innerHTML = html;
-        var scripts = tmp.querySelectorAll('script');
-        scripts.forEach(function(s) {
+        var scripts = Array.from(tmp.querySelectorAll('script'));
+
+        // Execute scripts sequentially — wait for external scripts to load
+        // before running inline scripts that depend on them (e.g. Chart.js)
+        function runNext(i) {
+          if (i >= scripts.length) {
+            // Resize Chart.js instances after all scripts have executed
+            setTimeout(function() {
+              if (typeof Chart !== 'undefined' && Chart.instances) {
+                Object.values(Chart.instances).forEach(function(c) { c.resize(); });
+              }
+            }, 50);
+            return;
+          }
+          var s = scripts[i];
           var ns = document.createElement('script');
           ns.setAttribute('data-widget-injected', '1');
           if (s.src) {
             ns.src = s.src;
+            ns.onload = function() { runNext(i + 1); };
+            ns.onerror = function() { runNext(i + 1); };
           } else {
-            // Wrap in IIFE to isolate scope — prevents "already declared"
-            // errors when the same script re-executes on subsequent updates
             ns.textContent = '(function(){' + s.textContent + '})();';
           }
           document.body.appendChild(ns);
-        });
+          if (!s.src) { runNext(i + 1); }
+        }
+        runNext(0);
       }
 
       function connect() {

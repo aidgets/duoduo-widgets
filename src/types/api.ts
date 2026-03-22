@@ -41,6 +41,10 @@ export interface UpdateRequest {
 export interface UpdateResponse {
   ok: boolean;
   state: string;
+  update_seq?: number;
+  html_bytes?: number;
+  sse_viewers?: number;
+  draft_ttl_remaining?: number;
 }
 
 // --- Finalize ---

@@ -175,15 +175,35 @@ export class WidgetDurableObject implements DurableObject {
 
     const body = (await request.json()) as DOUpdateRequest;
 
-    await this.state.storage.put("draft_html", body.html);
+    // Broadcast to SSE immediately (don't wait for storage)
+    // Storage and broadcast run in parallel — viewer sees update ASAP
+    const storageOps: Promise<void>[] = [this.state.storage.put("draft_html", body.html)];
     if (body.text_fallback !== undefined) {
-      await this.state.storage.put("text_fallback", body.text_fallback);
+      storageOps.push(this.state.storage.put("text_fallback", body.text_fallback));
     }
 
-    // Broadcast to SSE connections
-    await this.broadcastSSE("update", body.html);
+    await Promise.all([Promise.all(storageOps), this.broadcastSSE("update", body.html)]);
 
-    return jsonResponse({ ok: true, state: checked.state });
+    // Include metrics for agent feedback
+    checked.update_count = (checked.update_count ?? 0) + 1;
+    await this.state.storage.put("manifest", checked);
+
+    const draftTtlRemaining = Math.max(
+      0,
+      Math.round(
+        (new Date(checked.created_at).getTime() + checked.draft_ttl_seconds * 1000 - Date.now()) /
+          1000,
+      ),
+    );
+
+    return jsonResponse({
+      ok: true,
+      state: checked.state,
+      update_seq: checked.update_count,
+      html_bytes: body.html.length,
+      sse_viewers: this.sseConnections.length,
+      draft_ttl_remaining: draftTtlRemaining,
+    });
   }
 
   private async handleFinalize(request: Request): Promise<Response> {
@@ -463,28 +483,26 @@ export class WidgetDurableObject implements DurableObject {
     const data = JSON.stringify({ html, timestamp: new Date().toISOString() });
     const message = `event: ${eventType}\ndata: ${data}\n\n`;
 
-    const toRemove: SSEConnection[] = [];
-    for (const conn of this.sseConnections) {
-      try {
-        await conn.writer.write(conn.encoder.encode(message));
-      } catch {
-        toRemove.push(conn);
-      }
-    }
+    const results = await Promise.allSettled(
+      this.sseConnections.map((conn) =>
+        conn.writer.write(conn.encoder.encode(message)).then(
+          () => null,
+          () => conn,
+        ),
+      ),
+    );
 
-    for (const conn of toRemove) {
-      this.removeSSEConnection(conn);
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value !== null) {
+        this.removeSSEConnection(r.value);
+      }
     }
   }
 
   private async closeAllSSE(): Promise<void> {
-    for (const conn of this.sseConnections) {
-      try {
-        await conn.writer.close();
-      } catch {
-        // Already closed
-      }
-    }
+    await Promise.allSettled(
+      this.sseConnections.map((conn) => conn.writer.close().catch(() => {})),
+    );
     this.sseConnections = [];
   }
 

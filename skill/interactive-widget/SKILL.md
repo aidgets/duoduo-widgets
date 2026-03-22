@@ -15,125 +15,104 @@ description: >
 
 # Widget — Durable Interactive Artifacts
 
-`duoduo-widget` CLI creates persistent web widgets with `open -> update -> finalize` lifecycle.
+The user watches the widget **live** — stream content fast, one section per tool call.
 
-## Prerequisites
-
-Install the CLI if not already available:
+## Quick start
 
 ```bash
-npm install -g @openduo/duoduo-widgets
+npm install -g @openduo/duoduo-widgets  # if not installed
 ```
 
-## Workflow
+### 1. Open
 
 ```bash
-# 1. Create draft — returns widget_id, viewer_url, control_url, control_token
 duoduo-widget open --title "Dashboard" --ttl-seconds 300
+```
 
-# 2. Send feishu_sidebar link to user immediately — wait for user to confirm it's open
-#    (user must open the sidebar BEFORE content is useful to them)
+Send `links.feishu_sidebar` or `links.browser` to user. **NEVER send `control_url`/`control_token`.**
 
-# 3. Push HTML in small increments — one logical block per update call
-#    Each update replaces the full page, so always include previously pushed sections
-echo '<h1>Title only</h1>' | duoduo-widget update --wid "wid_..."
-echo '<h1>Title</h1><div>Section 1...</div>' | duoduo-widget update --wid "wid_..."
-echo '<h1>Title</h1><div>Section 1</div><div>Section 2...</div>' | duoduo-widget update --wid "wid_..."
+### 2. Skeleton + push
 
-# 4. Freeze to immutable revision
+```bash
+cat > /tmp/w-{wid}.html << 'SKELETON'
+<div style="background:#1a1a1a;color:#e0e0e0;padding:20px;font-family:system-ui;min-height:100vh;">
+  <h1 style="color:#fff;font-size:28px;font-weight:500;margin:0 0 4px;">Title</h1>
+  <p style="color:#999;font-size:14px;margin:0 0 20px;">Subtitle</p>
+<!-- NEXT -->
+</div>
+SKELETON
+cat /tmp/w-{wid}.html | duoduo-widget update --wid "wid_..."
+```
+
+### 3. Append section + push (repeat)
+
+```bash
+python3 - /tmp/w-{wid}.html << 'PYEOF'
+import sys
+f = sys.argv[1]
+html = open(f).read()
+section = """<div style="background:#2a2a2a;padding:16px;border-radius:8px;margin-bottom:12px;">
+  <h3 style="margin:0 0 8px;color:#fff;font-size:16px;font-weight:500;">Section title</h3>
+  <p style="margin:0;color:#999;font-size:14px;">Content — $100 safe, no escaping needed</p>
+</div>
+<!-- NEXT -->"""
+html = html.replace('<!-- NEXT -->', section)
+open(f, 'w').write(html)
+PYEOF
+cat /tmp/w-{wid}.html | duoduo-widget update --wid "wid_..."
+```
+
+Quoted heredoc `'PYEOF'` — write raw HTML, no shell escaping. Only change content inside `"""..."""`.
+
+### 4. Finalize
+
+```bash
 duoduo-widget finalize --wid "wid_..."
 ```
 
-**Send `viewer_url` to user. NEVER send `control_url` or `control_token`.**
+## Rules
 
-**Progressive rendering protocol (important):**
-
-1. `open` → immediately send `links.feishu_sidebar` to user → wait for user to say they've opened it
-2. Push content in small logical blocks (header, then one section at a time)
-3. Each `update` call should add one meaningful chunk — not the entire page at once
-4. Reason: the user is watching the widget update live in a sidebar; small chunks make the experience feel responsive and avoid timeouts from large HTML payloads
-
-Use `--wid` (local cache) instead of long URLs. For large HTML, write to a temp file first then pipe: `cat /tmp/widget.html | duoduo-widget update --wid "wid_..."`.
-
-## Platform links
-
-`open` and `finalize` return a `links` object with ready-to-use URLs for different platforms:
-
-```json
-{
-  "links": {
-    "browser": "https://aidgets.dev/w/wid_...",
-    "feishu_sidebar": "https://applink.feishu.cn/client/web_url/open?mode=sidebar-semi&url=...",
-    "feishu_window": "https://applink.feishu.cn/client/web_url/open?mode=window&url=..."
-  }
-}
-```
-
-- **Feishu/Lark**: use `links.feishu_sidebar` to open widget in the sidebar, or `links.feishu_window` for a separate window
-- **Other channels**: use `links.browser` (the plain `viewer_url`)
+1. **Copy from `references/html_patterns.md`** — read it first, pick a section template, change only the data values. Never design HTML from scratch
+2. **One section per Bash call** — heredoc + cat pipe in a single command
+3. **Push after every section** — never batch
+4. **Never build full HTML in context** — the temp file accumulates; context only sees the section
+5. **Never read the temp file back** — it only flows through the pipe
+6. **Act on `_hints`** in update output: `no_viewers` → send link; `ttl_low`/`ttl_expiring` → finalize now; `many_updates` → wrap up
 
 ## Interactive widgets
-
-Collect structured user input:
 
 ```bash
 duoduo-widget open --title "Confirm" --ttl-seconds 300 \
   --interaction-mode submit --interaction-prompt "Review and confirm"
 ```
 
-Include submit button in HTML:
+Button: `<button onclick="window.duoduo.submit('action', {key:'val'})" style="background:#4a9;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;cursor:pointer;">Label</button>`
 
-```html
-<button onclick="window.duoduo.submit('confirm', {symbol:'NVDA', confirmed:true})">Confirm</button>
-```
+Read result: `duoduo-widget wait --wid "wid_..." --timeout-seconds 120`
 
-After finalize, read result:
+## HTML rules
 
-```bash
-duoduo-widget wait --wid "wid_..." --timeout-seconds 120
-# Returns: { submitted: true, event: { action: "confirm", payload: {...} } }
-```
-
-Non-blocking alternative: `duoduo-widget get --wid "wid_..."`
-
-## CLI commands
-
-| Command    | Purpose            | Key flags                                                                |
-| ---------- | ------------------ | ------------------------------------------------------------------------ |
-| `open`     | Create draft       | `--title`, `--ttl-seconds`, `--interaction-mode`, `--interaction-prompt` |
-| `update`   | Push HTML          | `--wid`, `--html` or stdin, `--text-fallback`, `--mode partial\|full`    |
-| `finalize` | Freeze revision    | `--wid`                                                                  |
-| `wait`     | Block for submit   | `--wid`, `--timeout-seconds`                                             |
-| `get`      | Poll submit status | `--wid`                                                                  |
-| `inspect`  | Debug manifest     | `--wid`                                                                  |
-
-## HTML authoring
-
-- Dark theme: `background: #1a1a1a; color: #e0e0e0`
-- Inline styles preferred (streaming-friendly)
-- CDN allowlist: `cdnjs.cloudflare.com`, `esm.sh`, `cdn.jsdelivr.net`, `unpkg.com`
-- Bridge: `window.duoduo.submit(action, payload)`, `window.duoduo.openLink(url)`
+- Inline styles only. CDN: `cdnjs.cloudflare.com`, `esm.sh`, `cdn.jsdelivr.net`, `unpkg.com`
 - Forbidden: `fetch()`, `XMLHttpRequest`, `WebSocket`, `eval()`, `new Function()`
-- For component patterns, color system, and examples: read `references/html_patterns.md`
 
-## Channel fallback
+**Templates** — read `references/html_patterns.md` first. Copy a template, change data values only.
 
-Always provide `--text-fallback`:
+## CLI reference
 
-```bash
-echo '<div>...</div>' | duoduo-widget update --wid "wid_..." \
-  --text-fallback "Analysis complete. Open the widget to view."
-```
+| Command    | Purpose          | Key flags                                                                |
+| ---------- | ---------------- | ------------------------------------------------------------------------ |
+| `open`     | Create draft     | `--title`, `--ttl-seconds`, `--interaction-mode`, `--interaction-prompt` |
+| `update`   | Push HTML        | `--wid`, stdin or `--html`, `--text-fallback`                            |
+| `finalize` | Freeze           | `--wid`                                                                  |
+| `wait`     | Block for submit | `--wid`, `--timeout-seconds`                                             |
+| `get`      | Poll status      | `--wid`                                                                  |
 
 ## State machine
 
-```text
-draft -> finalized -> awaiting_input -> submitted (terminal)
-draft -> draft_expired | awaiting_input -> interaction_expired
-```
+`draft` → `finalized` → `awaiting_input` → `submitted` (terminal)
 
-Finalized/submitted artifacts are permanent. To continue: `open --fork <widget_id>`.
+Finalized artifacts are permanent. Fork: `open --fork <widget_id>`.
 
 ## Environment
 
-Requires `WIDGET_SERVICE_URL` env var (e.g. `https://aidgets.dev`).
+`WIDGET_SERVICE_URL` env var (default: `https://aidgets.dev`).

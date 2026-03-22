@@ -14,6 +14,7 @@ export interface WidgetManifest {
   revision_count: number;
   current_revision_id: string | null;
   interaction: InteractionConfig | null;
+  update_count?: number;
 }
 
 export interface InteractionConfig {
