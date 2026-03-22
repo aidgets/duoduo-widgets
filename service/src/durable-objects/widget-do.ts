@@ -50,6 +50,7 @@ export interface DOSubmitRequest {
 interface SSEConnection {
   writer: WritableStreamDefaultWriter<Uint8Array>;
   encoder: TextEncoder;
+  keepAliveTimer: ReturnType<typeof setInterval> | null;
 }
 
 type WaitResolver = (event: InteractionEvent | null) => void;
@@ -448,8 +449,17 @@ export class WidgetDurableObject implements DurableObject {
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
 
-    const conn: SSEConnection = { writer, encoder };
+    const conn: SSEConnection = { writer, encoder, keepAliveTimer: null };
     this.sseConnections.push(conn);
+
+    // Keep-alive: send SSE comment frame every 15s to prevent idle timeout
+    // by the Workers runtime and network intermediaries. Comment frames (":")
+    // are ignored by the browser's EventSource spec.
+    conn.keepAliveTimer = setInterval(() => {
+      writer.write(encoder.encode(": ping\n\n")).catch(() => {
+        this.removeSSEConnection(conn);
+      });
+    }, 15_000);
 
     // Send initial comment to establish connection
     writer.write(encoder.encode(": connected\n\n")).catch(() => {
@@ -501,7 +511,10 @@ export class WidgetDurableObject implements DurableObject {
 
   private async closeAllSSE(): Promise<void> {
     await Promise.allSettled(
-      this.sseConnections.map((conn) => conn.writer.close().catch(() => {})),
+      this.sseConnections.map((conn) => {
+        if (conn.keepAliveTimer) clearInterval(conn.keepAliveTimer);
+        return conn.writer.close().catch(() => {});
+      }),
     );
     this.sseConnections = [];
   }
@@ -511,11 +524,8 @@ export class WidgetDurableObject implements DurableObject {
     if (idx >= 0) {
       this.sseConnections.splice(idx, 1);
     }
-    try {
-      conn.writer.close();
-    } catch {
-      // Already closed
-    }
+    if (conn.keepAliveTimer) clearInterval(conn.keepAliveTimer);
+    conn.writer.close().catch(() => {});
   }
 }
 
