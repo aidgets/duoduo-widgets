@@ -21,13 +21,15 @@ This creates **richer shared context** between AI and humans — going beyond th
 
 ## Gallery
 
+Click any screenshot to try it live on [aidgets.dev](https://aidgets.dev):
+
 <table>
   <tr>
-    <td align="center"><img src="./screenshots/09-sql-ecommerce-dashboard.jpg" width="360" /><br /><sub>SQL dashboard</sub></td>
-    <td align="center"><img src="./screenshots/03-deploy-config-form.jpg" width="360" /><br /><sub>Interactive form</sub></td>
+    <td align="center"><a href="https://aidgets.dev/w/wid_666c12dac6864b7486a1/rev_0001"><img src="./screenshots/09-sql-ecommerce-dashboard.jpg" width="360" /></a><br /><sub><a href="https://aidgets.dev/w/wid_666c12dac6864b7486a1/rev_0001">SQL dashboard — try live</a></sub></td>
+    <td align="center"><a href="https://aidgets.dev/w/wid_d2ad001a810c4687ae14/rev_0001"><img src="./screenshots/03-deploy-config-form.jpg" width="360" /></a><br /><sub><a href="https://aidgets.dev/w/wid_d2ad001a810c4687ae14/rev_0001">Interactive form — try live</a></sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="./screenshots/05-three-body-simulation.jpg" width="360" /><br /><sub>Canvas animation</sub></td>
+    <td align="center"><a href="https://aidgets.dev/w/wid_768de09b5e324aaa92a4/rev_0001"><img src="./screenshots/05-three-body-simulation.jpg" width="360" /></a><br /><sub><a href="https://aidgets.dev/w/wid_768de09b5e324aaa92a4/rev_0001">Canvas animation — try live</a></sub></td>
     <td align="center"><img src="./screenshots/04-api-health-table.jpg" width="360" /><br /><sub>Sortable data table</sub></td>
   </tr>
   <tr>
@@ -63,14 +65,14 @@ Send the `viewer_url` to the user through any channel. **Never share the `contro
 
 ## CLI Reference
 
-| Command | Purpose | Key Flags |
-|---------|---------|-----------|
-| `open` | Create a new widget draft | `--title`, `--ttl-seconds`, `--interaction-mode`, `--interaction-prompt` |
-| `update` | Push HTML to the draft | `--wid`, `--html` or stdin, `--text-fallback`, `--mode` |
-| `finalize` | Freeze as immutable revision | `--wid` |
-| `wait` | Block until user submits | `--wid`, `--timeout-seconds` |
-| `get` | Non-blocking submission check | `--wid` |
-| `inspect` | Debug widget state | `--wid` |
+| Command    | Purpose                       | Key Flags                                                                |
+| ---------- | ----------------------------- | ------------------------------------------------------------------------ |
+| `open`     | Create a new widget draft     | `--title`, `--ttl-seconds`, `--interaction-mode`, `--interaction-prompt` |
+| `update`   | Push HTML to the draft        | `--wid`, `--html` or stdin, `--text-fallback`, `--mode`                  |
+| `finalize` | Freeze as immutable revision  | `--wid`                                                                  |
+| `wait`     | Block until user submits      | `--wid`, `--timeout-seconds`                                             |
+| `get`      | Non-blocking submission check | `--wid`                                                                  |
+| `inspect`  | Debug widget state            | `--wid`                                                                  |
 
 `--wid` uses a local cache (`~/.cache/duoduo-widget/`) to resolve control URLs, keeping agent context clean.
 
@@ -96,8 +98,12 @@ duoduo-widget wait --wid "wid_..." --timeout-seconds 300
 ```
 
 Returns:
+
 ```json
-{ "submitted": true, "event": { "action": "deploy", "payload": { "env": "production", "confirmed": true } } }
+{
+  "submitted": true,
+  "event": { "action": "deploy", "payload": { "env": "production", "confirmed": true } }
+}
 ```
 
 ## Self-Hosting
@@ -171,14 +177,14 @@ export WIDGET_SERVICE_URL=https://duoduo-widget.your-subdomain.workers.dev
 
 ### Configuration files
 
-| File | Committed | Purpose |
-|------|-----------|---------|
-| `service/wrangler.toml` | Yes | Shared config (DO bindings, migrations, R2 bucket name) |
-| `service/.env` | **No** | Your `CLOUDFLARE_ACCOUNT_ID` (gitignored) |
-| `service/.env.example` | Yes | Template for `service/.env` |
-| `service/.dev.vars` | **No** | Local dev secrets for `wrangler dev` (gitignored) |
-| `.env` | **No** | CLI config: `WIDGET_SERVICE_URL` (gitignored) |
-| `.env.example` | Yes | Template for `.env` |
+| File                    | Committed | Purpose                                                 |
+| ----------------------- | --------- | ------------------------------------------------------- |
+| `service/wrangler.toml` | Yes       | Shared config (DO bindings, migrations, R2 bucket name) |
+| `service/.env`          | **No**    | Your `CLOUDFLARE_ACCOUNT_ID` (gitignored)               |
+| `service/.env.example`  | Yes       | Template for `service/.env`                             |
+| `service/.dev.vars`     | **No**    | Local dev secrets for `wrangler dev` (gitignored)       |
+| `.env`                  | **No**    | CLI config: `WIDGET_SERVICE_URL` (gitignored)           |
+| `.env.example`          | Yes       | Template for `.env`                                     |
 
 ## Architecture
 
