@@ -118,7 +118,28 @@ V1 先用 Cloudflare Workers / Durable Objects / R2 验证模型，但 API contr
 
 - widget 需要 host-owned shell、明确 finalize 边界、durable revision
 - 渐进式更新可以完全由外部 service 负责
-- 如果把 duoduo 想成“一个会用命令行的人”，`wait/get` 是最自然的交互读取模型
+- 如果把 duoduo 想成”一个会用命令行的人”，`wait/get` 是最自然的交互读取模型
+
+### 4.4 增量更新（v0.4+）— 受 A2UI 启发
+
+Google A2UI 协议的核心洞察是将 UI 变更分为两个正交维度：**结构变更**（低频）和**数据变更**（高频）。
+A2UI 用声明式组件 + data binding 实现这一点，但这对 duoduo-widget 来说太重——需要 renderer、catalog、binding 引擎。
+
+duoduo-widget 的方案是用 HTML 原生能力实现同样的分离：
+
+- **结构变更**：全量 `update --html`（推完整 HTML，morphdom diff）
+- **数据变更**：`update --patch`（CSS selector + DOM 操作，跳过 morphdom）
+
+```text
+全量模式:  Agent 推 HTML(N bytes) → SSE → morphdom diff → 全页重渲染
+Patch 模式: Agent 推 patch(delta bytes) → SSE → querySelector → 精准 DOM 操作
+```
+
+设计约束：
+
+- Patch 只修改 viewer 端 DOM，不更新 DO 存储的 draft_html
+- Finalize 前 agent 需要做一次全量 update 以确保持久化
+- 这是有意为之：patch 是 streaming 加速手段，不是持久化机制
 
 ---
 
@@ -282,10 +303,18 @@ type WidgetOpenArgs = {
   };
 };
 
+type PatchOp = {
+  op: "append" | "prepend" | "replace" | "innerHTML" | "text" | "remove";
+  selector: string;
+  html?: string;
+  text?: string;
+};
+
 type WidgetUpdateArgs = {
   url?: string;
   wid?: string;
-  html: string;
+  html?: string; // full HTML mode (existing)
+  patches?: PatchOp[]; // incremental DOM patch mode (new in v0.4)
   text_fallback?: string;
   mode?: "replace" | "append";
 };
@@ -312,7 +341,7 @@ type WidgetGetArgs = {
 - `open`: 创建新的 draft，立即返回 `widget_id`、`viewer_url`、`control_url`
 - `open --widget-id <widget_id>`: 为既有 widget 的最新 immutable 状态生成新的只读 `viewer_url`
 - `open --fork <widget_id>`: 从既有 widget 的最新 immutable 状态派生新的 draft，并返回新的 `widget_id`
-- `update`: 持续写入当前 draft；默认 `replace`，可选 `append`
+- `update`: 持续写入当前 draft；支持全量 HTML 或增量 `--patch` 模式（v0.4+）
 - `finalize`: 冻结当前 draft，生成 immutable revision
 - `wait`: 阻塞等待用户提交；如果已 `submitted`，返回同一份最终结果
 - `get`: 非阻塞查询当前是否已有提交结果

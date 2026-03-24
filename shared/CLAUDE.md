@@ -86,12 +86,14 @@ Agent --> CLI --> Widget Service (CF Workers + DO + R2)
 - **control_url**: Private, capability URL for agent/CLI (with token)
 - **widget_id**: Durable reference in the widget service (not a cache key)
 - **Progressive rendering**: Agent streams HTML updates via `update`; viewer sees live changes via SSE
+- **Incremental patching**: Agent can send targeted DOM patches (`--patch`) instead of full HTML, for efficient data-heavy streaming
 - **Interaction bridge**: `window.duoduo.submit(action, payload)` in the viewer shell posts structured data back to the service
 - **wait/get**: Agent blocks or polls for user interaction results (structured JSON)
 
 ### Viewer Shell
 
 The viewer shell is a host-owned HTML wrapper that:
+
 - Renders agent-generated HTML in a sandboxed iframe
 - Provides `window.duoduo.submit()` and `window.duoduo.openLink()` bridges
 - Connects to SSE for live draft updates
@@ -101,6 +103,7 @@ The viewer shell is a host-owned HTML wrapper that:
 ## Agent Skill
 
 The skill definition lives at `skill/SKILL.md`. It provides Claude Code (and other agents) with instructions for using the `duoduo-widget` CLI effectively:
+
 - When to create widgets vs. return plain text
 - Progressive generation pattern (`open` -> `update` -> `finalize`)
 - Interaction handling (`wait` / `get`)

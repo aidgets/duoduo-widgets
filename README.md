@@ -63,12 +63,45 @@ duoduo-widget finalize --wid "wid_..."
 
 Send the `viewer_url` to the user through any channel. **Never share the `control_url` or `control_token`.**
 
+## Incremental Patch Mode
+
+Instead of re-sending the entire HTML on every update, agents can send targeted DOM patches — appending rows, updating numbers, changing status text — with minimal data transfer. The viewer applies patches instantly via CSS selectors, bypassing full-page morphdom diffing.
+
+```bash
+# 1. Push skeleton with id-tagged elements
+echo '<div><h1>Dashboard</h1>
+  <span id="count">0</span> items
+  <tbody id="rows"></tbody>
+  <div id="status">Loading...</div>
+</div>' | duoduo-widget update --wid "wid_..."
+
+# 2. Stream incremental patches (viewer updates instantly)
+duoduo-widget update --wid "wid_..." --patch '[
+  {"op":"append","selector":"#rows","html":"<tr><td>Acme</td><td>$120k</td></tr>"},
+  {"op":"text","selector":"#count","text":"1"},
+  {"op":"innerHTML","selector":"#status","html":"<strong style=\"color:green\">Done</strong>"}
+]'
+```
+
+**Supported operations:**
+
+| Op          | What it does                | Field  |
+| ----------- | --------------------------- | ------ |
+| `append`    | Insert HTML as last child   | `html` |
+| `prepend`   | Insert HTML as first child  | `html` |
+| `replace`   | Replace the matched element | `html` |
+| `innerHTML` | Set innerHTML               | `html` |
+| `text`      | Set textContent             | `text` |
+| `remove`    | Remove the matched element  | —      |
+
+**Why this matters**: For data-heavy widgets (tables, dashboards, reports), patch mode reduces SSE payload from O(full page) to O(delta). In benchmarks, a 4-row dashboard update transferred 46% less data than full-HTML mode — and the gap widens linearly as content grows. Patches also skip morphdom diffing and script re-execution, making viewer updates nearly instantaneous.
+
 ## CLI Reference
 
 | Command    | Purpose                       | Key Flags                                                                |
 | ---------- | ----------------------------- | ------------------------------------------------------------------------ |
 | `open`     | Create a new widget draft     | `--title`, `--ttl-seconds`, `--interaction-mode`, `--interaction-prompt` |
-| `update`   | Push HTML to the draft        | `--wid`, `--html` or stdin, `--text-fallback`, `--mode`                  |
+| `update`   | Push HTML or patches          | `--wid`, `--html` or stdin, `--patch <json>`, `--text-fallback`          |
 | `finalize` | Freeze as immutable revision  | `--wid`                                                                  |
 | `wait`     | Block until user submits      | `--wid`, `--timeout-seconds`                                             |
 | `get`      | Non-blocking submission check | `--wid`                                                                  |
@@ -207,7 +240,7 @@ Agent -> duoduo-widget CLI -> Widget Service (Cloudflare Workers)
 - **Workers**: API routing + viewer shell serving
 - **Durable Objects**: Draft coordination, wait/get blocking, submit idempotency
 - **R2**: Immutable revision storage (finalized HTML persists permanently)
-- **Viewer Shell**: Sandboxed HTML with morphdom progressive updates, SSE streaming, `window.duoduo` bridge
+- **Viewer Shell**: Sandboxed HTML with morphdom progressive updates, incremental DOM patching, SSE streaming, `window.duoduo` bridge
 
 ## Agent Skill
 
