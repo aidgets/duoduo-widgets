@@ -44,7 +44,7 @@ SKELETON
 cat /tmp/w-{wid}.html | duoduo-widget update --wid "wid_..."
 ```
 
-### 3. Append section + push (repeat)
+### 3a. Append section via full HTML (classic)
 
 ```bash
 python3 - /tmp/w-{wid}.html << 'PYEOF'
@@ -63,6 +63,55 @@ cat /tmp/w-{wid}.html | duoduo-widget update --wid "wid_..."
 ```
 
 Quoted heredoc `'PYEOF'` — write raw HTML, no shell escaping. Only change content inside `"""..."""`.
+
+### 3b. Incremental update via `--patch` (preferred for data-heavy widgets)
+
+After the skeleton is pushed, use `--patch` to update specific parts of the page without re-sending the entire HTML. This is faster, uses less bandwidth, and avoids morphdom re-rendering.
+
+```bash
+duoduo-widget update --wid "wid_..." --patch '[
+  {"op":"append","selector":"#rows","html":"<tr><td>New item</td><td>$100</td></tr>"},
+  {"op":"text","selector":"#count","text":"42"},
+  {"op":"innerHTML","selector":"#status","html":"<strong style=\"color:#4ade80\">Done</strong>"}
+]'
+```
+
+**Patch operations:**
+
+| Op          | What it does                               | Requires |
+| ----------- | ------------------------------------------ | -------- |
+| `append`    | Insert `html` as last child of `selector`  | `html`   |
+| `prepend`   | Insert `html` as first child of `selector` | `html`   |
+| `replace`   | Replace element matching `selector`        | `html`   |
+| `innerHTML` | Set innerHTML of `selector`                | `html`   |
+| `text`      | Set textContent of `selector`              | `text`   |
+| `remove`    | Remove element matching `selector`         | —        |
+
+**When to use patch vs full HTML:**
+
+- **Patch**: tables gaining rows, dashboards updating numbers, status text changes, progressive list building
+- **Full HTML**: first skeleton push, layout changes, adding new scripts/CDN libraries
+
+**Important**: Patches update the live viewer instantly but do NOT update the stored HTML on the server. To ensure the finalized artifact includes all changes, use this pattern:
+
+1. Push skeleton via full `update --html` (keep the temp file)
+2. Stream data via `--patch` for live viewer speed
+3. In parallel, keep appending to `/tmp/w-{wid}.html` locally
+4. Before `finalize`, do one last `cat /tmp/w-{wid}.html | duoduo-widget update --wid ...`
+5. Then `finalize`
+
+Or simply: pass the final complete HTML via `duoduo-widget finalize --wid ... --html "..."` if available.
+
+**Skeleton design for patch**: Give target elements `id` attributes so patches can address them:
+
+```html
+<tbody id="rows"></tbody>
+<!-- append rows here -->
+<span id="count">0</span>
+<!-- update text here -->
+<div id="status">Loading...</div>
+<!-- update status here -->
+```
 
 ### 4. Finalize
 
@@ -99,13 +148,13 @@ Read result: `duoduo-widget wait --wid "wid_..." --timeout-seconds 120`
 
 ## CLI reference
 
-| Command    | Purpose          | Key flags                                                                |
-| ---------- | ---------------- | ------------------------------------------------------------------------ |
-| `open`     | Create draft     | `--title`, `--ttl-seconds`, `--interaction-mode`, `--interaction-prompt` |
-| `update`   | Push HTML        | `--wid`, stdin or `--html`, `--text-fallback`                            |
-| `finalize` | Freeze           | `--wid`                                                                  |
-| `wait`     | Block for submit | `--wid`, `--timeout-seconds`                                             |
-| `get`      | Poll status      | `--wid`                                                                  |
+| Command    | Purpose            | Key flags                                                                |
+| ---------- | ------------------ | ------------------------------------------------------------------------ |
+| `open`     | Create draft       | `--title`, `--ttl-seconds`, `--interaction-mode`, `--interaction-prompt` |
+| `update`   | Push HTML or patch | `--wid`, stdin or `--html`, `--patch <json>`, `--text-fallback`          |
+| `finalize` | Freeze             | `--wid`                                                                  |
+| `wait`     | Block for submit   | `--wid`, `--timeout-seconds`                                             |
+| `get`      | Poll status        | `--wid`                                                                  |
 
 ## State machine
 

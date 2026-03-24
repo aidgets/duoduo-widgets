@@ -2,6 +2,7 @@ export type { InteractionConfig, WidgetState, WidgetManifest } from "./manifest.
 export type { WidgetRevision } from "./revision.js";
 export type { InteractionEvent } from "./interaction.js";
 export type {
+  PatchOp,
   OpenRequest,
   OpenResponse,
   UpdateRequest,

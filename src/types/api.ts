@@ -31,9 +31,26 @@ export interface OpenResponse {
 
 // --- Update ---
 
+/**
+ * A single DOM patch operation.
+ * - "append": insert `html` as the last child of the element matching `selector`
+ * - "prepend": insert `html` as the first child of the element matching `selector`
+ * - "replace": replace the element matching `selector` with `html`
+ * - "innerHTML": set the innerHTML of the element matching `selector` to `html`
+ * - "text": set the textContent of the element matching `selector` to `text`
+ * - "remove": remove the element matching `selector`
+ */
+export interface PatchOp {
+  op: "append" | "prepend" | "replace" | "innerHTML" | "text" | "remove";
+  selector: string;
+  html?: string;
+  text?: string;
+}
+
 export interface UpdateRequest {
   widget_id: string;
-  html: string;
+  html?: string;
+  patches?: PatchOp[];
   text_fallback?: string;
   mode?: "partial" | "full"; // default "full"
 }
@@ -43,6 +60,7 @@ export interface UpdateResponse {
   state: string;
   update_seq?: number;
   html_bytes?: number;
+  patch_count?: number;
   sse_viewers?: number;
   draft_ttl_remaining?: number;
 }
