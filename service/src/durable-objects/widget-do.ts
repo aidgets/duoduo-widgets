@@ -23,8 +23,16 @@ export interface DOOpenResponse {
   control_token_expires_at: string;
 }
 
+export interface DOPatchOp {
+  op: "append" | "prepend" | "replace" | "innerHTML" | "text" | "remove";
+  selector: string;
+  html?: string;
+  text?: string;
+}
+
 export interface DOUpdateRequest {
-  html: string;
+  html?: string;
+  patches?: DOPatchOp[];
   text_fallback?: string;
   mode?: "partial" | "full";
 }
@@ -175,15 +183,25 @@ export class WidgetDurableObject implements DurableObject {
     }
 
     const body = (await request.json()) as DOUpdateRequest;
+    const isPatch = !body.html && Array.isArray(body.patches) && body.patches.length > 0;
 
     // Broadcast to SSE immediately (don't wait for storage)
     // Storage and broadcast run in parallel — viewer sees update ASAP
-    const storageOps: Promise<void>[] = [this.state.storage.put("draft_html", body.html)];
+    const storageOps: Promise<void>[] = [];
+    if (body.html) {
+      storageOps.push(this.state.storage.put("draft_html", body.html));
+    }
     if (body.text_fallback !== undefined) {
       storageOps.push(this.state.storage.put("text_fallback", body.text_fallback));
     }
 
-    await Promise.all([Promise.all(storageOps), this.broadcastSSE("update", body.html)]);
+    if (isPatch) {
+      // Patch mode: broadcast patch ops, don't overwrite stored HTML
+      await Promise.all([Promise.all(storageOps), this.broadcastSSEPatch(body.patches!)]);
+    } else if (body.html) {
+      // Full HTML mode (existing behavior)
+      await Promise.all([Promise.all(storageOps), this.broadcastSSE("update", body.html)]);
+    }
 
     // Include metrics for agent feedback
     checked.update_count = (checked.update_count ?? 0) + 1;
@@ -201,7 +219,8 @@ export class WidgetDurableObject implements DurableObject {
       ok: true,
       state: checked.state,
       update_seq: checked.update_count,
-      html_bytes: body.html.length,
+      html_bytes: body.html ? body.html.length : 0,
+      patch_count: isPatch ? body.patches!.length : undefined,
       sse_viewers: this.sseConnections.length,
       draft_ttl_remaining: draftTtlRemaining,
     });
@@ -488,6 +507,26 @@ export class WidgetDurableObject implements DurableObject {
   }
 
   // --- SSE helpers ---
+
+  private async broadcastSSEPatch(patches: DOPatchOp[]): Promise<void> {
+    const data = JSON.stringify({ patches, timestamp: new Date().toISOString() });
+    const message = `event: patch\ndata: ${data}\n\n`;
+
+    const results = await Promise.allSettled(
+      this.sseConnections.map((conn) =>
+        conn.writer.write(conn.encoder.encode(message)).then(
+          () => null,
+          () => conn,
+        ),
+      ),
+    );
+
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value !== null) {
+        this.removeSSEConnection(r.value);
+      }
+    }
+  }
 
   private async broadcastSSE(eventType: string, html: string): Promise<void> {
     const data = JSON.stringify({ html, timestamp: new Date().toISOString() });

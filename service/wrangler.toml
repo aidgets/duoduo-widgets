@@ -28,3 +28,26 @@ bucket_name = "duoduo-widgets"
 
 [vars]
 # TOKEN_SECRET must be set via: npx wrangler secret put TOKEN_SECRET
+
+# ─── Staging environment ─────────────────────────────────────────
+# Deploy with: npx wrangler deploy --env staging
+# Set secrets: npx wrangler secret put TOKEN_SECRET --env staging
+[env.staging]
+name = "duoduo-widget-staging"
+workers_dev = true
+
+[env.staging.durable_objects]
+bindings = [
+  { name = "WIDGET_DO", class_name = "WidgetDurableObject" }
+]
+
+[[env.staging.migrations]]
+tag = "v1"
+new_sqlite_classes = ["WidgetDurableObject"]
+
+[[env.staging.r2_buckets]]
+binding = "WIDGET_R2"
+bucket_name = "duoduo-widgets-staging"
+
+[env.staging.vars]
+# TOKEN_SECRET must be set via: npx wrangler secret put TOKEN_SECRET --env staging

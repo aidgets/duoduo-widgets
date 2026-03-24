@@ -1,10 +1,11 @@
 import type { WidgetClient } from "../http-client.js";
-import type { UpdateRequest, UpdateResponse } from "../../types/index.js";
+import type { UpdateRequest, UpdateResponse, PatchOp } from "../../types/index.js";
 import { resolveWidget } from "../cache.js";
 
 export interface UpdateArgs {
   wid?: string;
   html?: string;
+  patch?: string;
   "text-fallback"?: string;
   mode?: string;
 }
@@ -12,6 +13,35 @@ export interface UpdateArgs {
 export async function updateCommand(client: WidgetClient, args: UpdateArgs): Promise<void> {
   const { widget_id, control_url, control_token } = await resolveWidget(args.wid);
 
+  // Patch mode: --patch takes a JSON array of PatchOp
+  if (args.patch) {
+    let patches: PatchOp[];
+    try {
+      patches = JSON.parse(args.patch);
+    } catch {
+      console.error("Error: --patch must be valid JSON array");
+      process.exit(1);
+    }
+    if (!Array.isArray(patches) || patches.length === 0) {
+      console.error("Error: --patch must be a non-empty JSON array");
+      process.exit(1);
+    }
+
+    const req: UpdateRequest = {
+      widget_id,
+      patches,
+      text_fallback: args["text-fallback"],
+    };
+
+    const res = await client.update(control_url, control_token, req);
+    const hints = generateHints(res, 0);
+    const output: Record<string, unknown> = { ...res };
+    if (hints.length > 0) output._hints = hints;
+    console.log(JSON.stringify(output, null, 2));
+    return;
+  }
+
+  // Full HTML mode (existing behavior)
   let html: string;
   if (args.html) {
     html = args.html;
@@ -22,7 +52,7 @@ export async function updateCommand(client: WidgetClient, args: UpdateArgs): Pro
     }
     html = Buffer.concat(chunks).toString("utf-8");
   } else {
-    console.error("Error: --html or stdin required");
+    console.error("Error: --html, --patch, or stdin required");
     process.exit(1);
   }
 

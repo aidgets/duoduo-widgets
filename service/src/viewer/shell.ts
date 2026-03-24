@@ -255,6 +255,40 @@ function renderSSEScript(): string {
           }
         });
 
+        es.addEventListener('patch', function(e) {
+          try {
+            var data = JSON.parse(e.data);
+            if (data.patches && Array.isArray(data.patches)) {
+              data.patches.forEach(function(p) {
+                var el = root.querySelector(p.selector);
+                if (!el) return;
+                switch (p.op) {
+                  case 'append':
+                    if (p.html) el.insertAdjacentHTML('beforeend', p.html);
+                    break;
+                  case 'prepend':
+                    if (p.html) el.insertAdjacentHTML('afterbegin', p.html);
+                    break;
+                  case 'replace':
+                    if (p.html) el.outerHTML = p.html;
+                    break;
+                  case 'innerHTML':
+                    if (p.html) el.innerHTML = p.html;
+                    break;
+                  case 'text':
+                    if (p.text !== undefined) el.textContent = p.text;
+                    break;
+                  case 'remove':
+                    el.remove();
+                    break;
+                }
+              });
+            }
+          } catch (err) {
+            console.error('patch parse error', err);
+          }
+        });
+
         es.addEventListener('finalize', function(e) {
           try {
             var data = JSON.parse(e.data);

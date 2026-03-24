@@ -20,8 +20,8 @@ export async function handleApiUpdate(request: Request, env: Env): Promise<Respo
     return jsonError("invalid_json", 400);
   }
 
-  if (!body.widget_id || !body.html) {
-    return jsonError("missing_widget_id_or_html", 400);
+  if (!body.widget_id || (!body.html && !body.patches)) {
+    return jsonError("missing_widget_id_or_content", 400);
   }
 
   // Validate token
@@ -30,9 +30,14 @@ export async function handleApiUpdate(request: Request, env: Env): Promise<Respo
     return jsonError("invalid_token", 403);
   }
 
-  // Size check: max 512KB
-  if (body.html.length > 512 * 1024) {
+  // Size check: max 512KB for full HTML
+  if (body.html && body.html.length > 512 * 1024) {
     return jsonError("html_too_large", 413);
+  }
+
+  // Patch count limit
+  if (body.patches && body.patches.length > 50) {
+    return jsonError("too_many_patches", 400);
   }
 
   // Forward to DO
@@ -44,6 +49,7 @@ export async function handleApiUpdate(request: Request, env: Env): Promise<Respo
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       html: body.html,
+      patches: body.patches,
       text_fallback: body.text_fallback,
       mode: body.mode ?? "full",
     }),

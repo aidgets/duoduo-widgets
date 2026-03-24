@@ -1,6 +1,6 @@
 {
   "name": "@openduo/duoduo-widgets",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": false,
   "type": "module",
   "description": "Interactive web widgets that give AI agents a visual voice",

@@ -42,6 +42,7 @@ Open options:
 
 Update options:
   --html <html>                 HTML content (or pipe via stdin)
+  --patch <json>                JSON array of patch ops (incremental DOM update)
   --text-fallback <text>        Plain-text fallback
   --mode <partial|full>         Update mode (default: full)
 
@@ -62,6 +63,7 @@ function main(): void {
       "timeout-seconds": { type: "string" },
       "text-fallback": { type: "string" },
       html: { type: "string" },
+      patch: { type: "string" },
       mode: { type: "string" },
       "interaction-mode": { type: "string" },
       "interaction-prompt": { type: "string" },
