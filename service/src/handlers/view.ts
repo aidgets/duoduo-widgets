@@ -22,10 +22,26 @@ export async function handleView(
     }
 
     const html = await obj.text();
+
+    // Fetch title from DO for the shell's <title> tag
+    let title: string | undefined;
+    try {
+      const doId = env.WIDGET_DO.idFromName(widgetId);
+      const stub = env.WIDGET_DO.get(doId);
+      const doRes = await stub.fetch(new Request("https://do/get"));
+      if (doRes.ok) {
+        const doData = (await doRes.json()) as { title: string };
+        title = doData.title;
+      }
+    } catch {
+      // Non-critical — shell falls back to widgetId
+    }
+
     const shell = renderShell({
       widgetId,
       staticHtml: html,
       state: "finalized",
+      title,
     });
 
     return new Response(shell, {
