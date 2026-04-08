@@ -38,9 +38,14 @@ async function handleMeta(widgetId: string, env: Env): Promise<Response> {
       headers: { "Content-Type": "application/json" },
     });
   }
-  const data = (await doRes.json()) as { state: string; title: string };
+  const data = (await doRes.json()) as { state: string; title: string; created_at: string };
   return new Response(
-    JSON.stringify({ widget_id: widgetId, title: data.title, state: data.state }),
+    JSON.stringify({
+      widget_id: widgetId,
+      title: data.title,
+      state: data.state,
+      created_at: data.created_at,
+    }),
     {
       headers: {
         "Content-Type": "application/json",
