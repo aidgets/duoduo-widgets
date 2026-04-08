@@ -11,6 +11,7 @@
  *   GET  /api/inspect?token=<tok>           -> debug inspection
  *   GET  /w/<wid>                           -> viewer shell (live)
  *   GET  /w/<wid>/stream                    -> SSE stream
+ *   GET  /w/<wid>/meta                      -> public JSON metadata
  *   GET  /w/<wid>/<rev_id>                  -> viewer shell (specific revision)
  *   GET  /healthz                           -> health check
  */
@@ -25,6 +26,30 @@ import { handleApiGet } from "./handlers/api-get.js";
 import { handleApiInspect } from "./handlers/api-inspect.js";
 import { handleStream } from "./handlers/stream.js";
 import { handleView } from "./handlers/view.js";
+
+/** GET /w/<wid>/meta — public JSON metadata (no token required). */
+async function handleMeta(widgetId: string, env: Env): Promise<Response> {
+  const doId = env.WIDGET_DO.idFromName(widgetId);
+  const stub = env.WIDGET_DO.get(doId);
+  const doRes = await stub.fetch(new Request("https://do/get"));
+  if (!doRes.ok) {
+    return new Response(JSON.stringify({ error: "not_found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const data = (await doRes.json()) as { state: string; title: string };
+  return new Response(
+    JSON.stringify({ widget_id: widgetId, title: data.title, state: data.state }),
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
+        "Access-Control-Allow-Origin": "*",
+      },
+    },
+  );
+}
 
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
@@ -69,6 +94,10 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
     if (suffix === "stream") {
       return handleStream(widgetId, request, env);
+    }
+
+    if (suffix === "meta") {
+      return handleMeta(widgetId, env);
     }
 
     // suffix is either null (live view) or a revision ID

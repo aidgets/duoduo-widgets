@@ -14,6 +14,11 @@
   "bin": {
     "duoduo-widget": "dist/duoduo-widget.js"
   },
+  "exports": {
+    ".": "./dist/duoduo-widget.js",
+    "./gallery/render": "./src/cli/gallery/render.ts",
+    "./gallery/types": "./src/cli/gallery/types.ts"
+  },
   "scripts": {
     "build": "node scripts/build-cli.mjs",
     "typecheck": "tsc --noEmit",
