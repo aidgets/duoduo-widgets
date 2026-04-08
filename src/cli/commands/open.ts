@@ -29,6 +29,7 @@ export async function openCommand(client: WidgetClient, args: OpenArgs): Promise
 
   await writeCache({
     widget_id: res.widget_id,
+    title: res.manifest.title || undefined,
     viewer_url: res.viewer_url,
     control_url: res.control_url,
     control_token: res.control_token,

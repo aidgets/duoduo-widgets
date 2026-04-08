@@ -8,10 +8,31 @@ const CACHE_DIR = process.env.XDG_CACHE_HOME
 
 export interface CacheEntry {
   widget_id: string;
+  title?: string;
   viewer_url: string;
   control_url: string;
   control_token: string;
   control_token_expires_at: string;
+}
+
+/** List all cached entries (including expired ones). */
+export async function listAllCache(): Promise<CacheEntry[]> {
+  try {
+    const files = await fs.promises.readdir(CACHE_DIR);
+    const entries: CacheEntry[] = [];
+    for (const f of files) {
+      if (!f.endsWith(".json") || f.endsWith(".tmp")) continue;
+      try {
+        const raw = await fs.promises.readFile(path.join(CACHE_DIR, f), "utf-8");
+        entries.push(JSON.parse(raw) as CacheEntry);
+      } catch {
+        // skip malformed files
+      }
+    }
+    return entries;
+  } catch {
+    return [];
+  }
 }
 
 /** Persist a control mapping so later commands can resolve by widget_id. */

@@ -18,6 +18,7 @@ import { finalizeCommand } from "./commands/finalize.js";
 import { waitCommand } from "./commands/wait.js";
 import { getCommand } from "./commands/get.js";
 import { inspectCommand } from "./commands/inspect.js";
+import { galleryCommand } from "./commands/gallery.js";
 
 const USAGE = `Usage: duoduo-widget <command> [options]
 
@@ -28,6 +29,8 @@ Commands:
   wait        Block until user submits (or timeout)
   get         Non-blocking check for user submission
   inspect     Debug: show widget manifest
+  gallery     List all your cached widgets
+  gallery open  Browse widgets in a local web gallery
 
 Global options:
   --wid <widget_id>             Widget ID (resolved from local cache)
@@ -49,6 +52,9 @@ Update options:
 Wait options:
   --timeout-seconds <n>         Timeout in seconds (default: 600)
 
+Gallery options:
+  --port <n>                    Local server port (default: 3210)
+
 Environment:
   WIDGET_SERVICE_URL            Base URL of the widget service (default: https://aidgets.dev)
 `;
@@ -69,6 +75,7 @@ function main(): void {
       "interaction-prompt": { type: "string" },
       fork: { type: "string" },
       "widget-id": { type: "string" },
+      port: { type: "string" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -104,6 +111,9 @@ function main(): void {
         break;
       case "inspect":
         await inspectCommand(client, args);
+        break;
+      case "gallery":
+        await galleryCommand(client, args, positionals[1]);
         break;
       default:
         console.error(`Unknown command: ${command}\n`);
