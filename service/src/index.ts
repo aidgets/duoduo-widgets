@@ -11,6 +11,8 @@ export interface Env {
   WIDGET_DO: DurableObjectNamespace;
   WIDGET_R2: R2Bucket;
   TOKEN_SECRET: string;
+  VERIFY_FILE_NAME?: string;
+  VERIFY_FILE_CONTENT?: string;
 }
 
 export default {

@@ -61,9 +61,9 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   const path = url.pathname;
   const method = request.method;
 
-  // --- WeChat domain verification ---
-  if (path === "/d33eb7c9be462c5eeb2e77b2afeebc02.txt" && method === "GET") {
-    return new Response("96ecc790fa3dd043f51cf2effd923b5953744e0a", {
+  // --- Domain verification (filename and content set via wrangler secrets) ---
+  if (env.VERIFY_FILE_NAME && path === `/${env.VERIFY_FILE_NAME}` && method === "GET") {
+    return new Response(env.VERIFY_FILE_CONTENT ?? "", {
       headers: { "Content-Type": "text/plain" },
     });
   }
