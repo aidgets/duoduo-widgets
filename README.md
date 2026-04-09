@@ -244,12 +244,12 @@ Agent -> duoduo-widget CLI -> Widget Service (Cloudflare Workers)
 
 ## Agent Skill
 
-For Claude Code / AI agent integration, see [`skill/interactive-widget/SKILL.md`](./skill/interactive-widget/SKILL.md). The skill teaches agents when and how to use widgets — progressive generation patterns, interaction handling, HTML component patterns, and security guidelines.
+For Claude Code / AI agent integration, see [`skills/interactive-widget/SKILL.md`](./skills/interactive-widget/SKILL.md). The skill teaches agents when and how to use widgets — progressive generation patterns, interaction handling, HTML component patterns, and security guidelines.
 
 Install as a Claude Code skill:
 
 ```bash
-ln -s /path/to/duoduo-widgets/skill/interactive-widget ~/.claude/skills/interactive-widget
+ln -s /path/to/duoduo-widgets/skills/interactive-widget ~/.claude/skills/interactive-widget
 ```
 
 ## Design Document

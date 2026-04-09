@@ -27,9 +27,10 @@ This project uses **npm** as its package manager. Do not use pnpm or yarn.
 │   ├── src/              Worker + Durable Object + viewer shell
 │   ├── wrangler.toml     Wrangler configuration
 │   └── package.json      Service-specific dependencies
-├── skill/
-│   ├── SKILL.md          Agent skill definition for Claude Code integration
-│   └── references/       Reference materials for the skill
+├── skills/
+│   └── interactive-widget/
+│       ├── SKILL.md      Agent skill definition for Claude Code integration
+│       └── references/   Reference materials for the skill
 ├── dist/                 Build output (CLI bundle)
 ├── screenshots/          Gallery screenshots
 ├── docs/
@@ -102,7 +103,7 @@ The viewer shell is a host-owned HTML wrapper that:
 
 ## Agent Skill
 
-The skill definition lives at `skill/SKILL.md`. It provides Claude Code (and other agents) with instructions for using the `duoduo-widget` CLI effectively:
+The skill definition lives at `skills/interactive-widget/SKILL.md`. It provides Claude Code (and other agents) with instructions for using the `duoduo-widget` CLI effectively:
 
 - When to create widgets vs. return plain text
 - Progressive generation pattern (`open` -> `update` -> `finalize`)
