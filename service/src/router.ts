@@ -13,6 +13,7 @@
  *   GET  /w/<wid>/stream                    -> SSE stream
  *   GET  /w/<wid>/meta                      -> public JSON metadata
  *   GET  /w/<wid>/<rev_id>                  -> viewer shell (specific revision)
+ *   GET  /                                  -> redirect to openduo.ai landing page
  *   GET  /healthz                           -> health check
  */
 
@@ -66,6 +67,11 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     return new Response(env.VERIFY_FILE_CONTENT ?? "", {
       headers: { "Content-Type": "text/plain" },
     });
+  }
+
+  // --- Root redirect: landing page lives on openduo.ai ---
+  if (path === "/" && method === "GET") {
+    return Response.redirect("https://openduo.ai/aidgets?tab=widgets", 302);
   }
 
   // --- Health check ---
